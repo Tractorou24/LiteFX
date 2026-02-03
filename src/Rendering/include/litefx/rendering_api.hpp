@@ -2464,7 +2464,7 @@ namespace LiteFX::Rendering {
             /// <summary>
             /// Stores the desired format of the image.
             /// </summary>
-            Format Format{ Format::R8G8B8A8_SRGB };
+            Rendering::Format Format{ Format::R8G8B8A8_SRGB };
 
             /// <summary>
             /// Stores the dimensions of the image.
