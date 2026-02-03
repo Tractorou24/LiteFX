@@ -1,13 +1,14 @@
 #pragma once
 
 #include <litefx/config.h>
+#include <litefx/platforms.h>
 
 #if !defined (LITEFX_DIRECTX12_API)
-#  if defined(LiteFX_Backends_DirectX12_EXPORTS) && (defined _WIN32 || defined WINCE)
+#  if defined(LiteFX_Backends_DirectX12_EXPORTS) && defined(LITEFX_OS_WINDOWS)
 #    define LITEFX_DIRECTX12_API __declspec(dllexport)
-#  elif (defined(LiteFX_Backends_DirectX12_EXPORTS) || defined(__APPLE__)) && defined __GNUC__ && __GNUC__ >= 4
+#  elif defined(LiteFX_Backends_DirectX12_EXPORTS) || defined(LITEFX_OS_LINUX)
 #    define LITEFX_DIRECTX12_API __attribute__ ((visibility ("default")))
-#  elif !defined(LiteFX_Backends_DirectX12_EXPORTS) && (defined _WIN32 || defined WINCE)
+#  elif !defined(LiteFX_Backends_DirectX12_EXPORTS) && defined(LITEFX_OS_WINDOWS)
 #    define LITEFX_DIRECTX12_API __declspec(dllimport)
 #  endif
 #endif 
@@ -16,7 +17,7 @@
 #  define LITEFX_DIRECTX12_API
 #endif
 
-#if (!defined _WIN32 && !defined WINCE)
+#ifndef LITEFX_OS_WINDOWS
 #  pragma message ("DirectX12: The DirectX backend requires Windows to be built on.")
 #endif
 

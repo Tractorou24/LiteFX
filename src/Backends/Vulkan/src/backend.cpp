@@ -78,7 +78,7 @@ private:
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT: LITEFX_TRACE(VULKAN_LOG, "{1}: {0}", callbackData->pMessage, t); break;
         }
         // Write to debug output. (In the debugger output on windows, std::clog on linux since debugger output do not exist)
-#if (defined _WIN32 || defined WINCE)
+#ifdef LITEFX_OS_WINDOWS
         OutputDebugString(callbackData->pMessage);
 #else
         LITEFX_DEBUG(VULKAN_LOG, "{}\n", callbackData->pMessage);
@@ -94,7 +94,7 @@ private:
         if (callbackData->messageIdNumber == LAYER_LOAD_ERROR_MESSAGE_ID)
             return VK_FALSE;
 
-#if (defined _WIN32 || defined WINCE)
+#ifdef LITEFX_OS_WINDOWS
         __debugbreak();
 #else
         __builtin_trap();

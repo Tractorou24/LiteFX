@@ -4,7 +4,7 @@
 #include <litefx/litefx.h>
 #include <litefx/graphics.hpp>
 
-#if (defined _WIN32 || defined WINCE)
+#ifdef LITEFX_OS_WINDOWS
 #  define GLFW_EXPOSE_NATIVE_WIN32
 #else 
 #  pragma message ("Dynamic Descriptors Sample: No supported surface platform detected.")

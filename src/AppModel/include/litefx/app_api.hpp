@@ -3,11 +3,11 @@
 #include <litefx/config.h>
 
 #if !defined (LITEFX_APPMODEL_API)
-#  if defined(LiteFX_AppModel_EXPORTS) && (defined _WIN32 || defined WINCE)
+#  if defined(LiteFX_AppModel_EXPORTS) && defined(LITEFX_OS_WINDOWS)
 #    define LITEFX_APPMODEL_API __declspec(dllexport)
-#  elif (defined(LiteFX_AppModel_EXPORTS) || defined(__APPLE__)) && defined __GNUC__ && __GNUC__ >= 4
+#  elif defined(LiteFX_AppModel_EXPORTS) || defined(LITEFX_OS_LINUX)
 #    define LITEFX_APPMODEL_API __attribute__ ((visibility ("default")))
-#  elif !defined(LiteFX_AppModel_EXPORTS) && (defined _WIN32 || defined WINCE)
+#  elif !defined(LiteFX_AppModel_EXPORTS) && defined(LITEFX_OS_WINDOWS)
 #    define LITEFX_APPMODEL_API __declspec(dllimport)
 #  endif
 #endif 

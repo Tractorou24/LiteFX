@@ -2,8 +2,9 @@
 
 #include <litefx/version.h>
 #include <litefx/config.h>
+#include <litefx/platforms.h>
 
-#if (defined _WIN32 || defined WINCE)
+#ifdef LITEFX_OS_WINDOWS
 #  define NOMINMAX
 #  include <Windows.h>
 #endif

@@ -1,13 +1,14 @@
 #pragma once
 
 #include <litefx/config.h>
+#include <litefx/platforms.h>
 
 #if !defined (LITEFX_VULKAN_API)
-#  if defined(LiteFX_Backends_Vulkan_EXPORTS) && (defined _WIN32 || defined WINCE)
+#  if defined(LiteFX_Backends_Vulkan_EXPORTS) && defined(LITEFX_OS_WINDOWS)
 #    define LITEFX_VULKAN_API __declspec(dllexport)
-#  elif (defined(LiteFX_Backends_Vulkan_EXPORTS) || defined(__APPLE__)) && defined __GNUC__ && __GNUC__ >= 4
+#  elif defined(LiteFX_Backends_Vulkan_EXPORTS) || defined(LITEFX_OS_LINUX)
 #    define LITEFX_VULKAN_API __attribute__ ((visibility ("default")))
-#  elif !defined(LiteFX_Backends_Vulkan_EXPORTS) && (defined _WIN32 || defined WINCE)
+#  elif !defined(LiteFX_Backends_Vulkan_EXPORTS) && defined(LITEFX_OS_WINDOWS)
 #    define LITEFX_VULKAN_API __declspec(dllimport)
 #  endif
 #endif 
@@ -16,7 +17,7 @@
 #  define LITEFX_VULKAN_API
 #endif
 
-#if (defined _WIN32 || defined WINCE)
+#ifdef LITEFX_OS_WINDOWS
 #  define VK_USE_PLATFORM_WIN32_KHR
 #endif
 
