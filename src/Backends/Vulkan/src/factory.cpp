@@ -45,8 +45,10 @@ public:
 		if (std::ranges::any_of(supportedExtensions, [](auto& extension) { return extension == VK_EXT_MEMORY_BUDGET_EXTENSION_NAME; }))
 			createFlags |= VMA_ALLOCATOR_CREATE_EXT_MEMORY_BUDGET_BIT;
 
+#if defined _WIN32 || defined WINCE			
 		if (std::ranges::any_of(supportedExtensions, [](auto& extension) { return extension == VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME; }))
 			createFlags |= VMA_ALLOCATOR_CREATE_KHR_EXTERNAL_MEMORY_WIN32_BIT;
+#endif
 
 		// Create an buffer allocator.
 		VmaAllocatorCreateInfo allocatorInfo = {};
