@@ -3,7 +3,11 @@
 using namespace LiteFX::Rendering::Backends;
 
 #define VMA_IMPLEMENTATION
+#if defined _WIN32 || defined WINCE
 #include <vma/vk_mem_alloc.h>
+#else
+#include <vk_mem_alloc.h>
+#endif
 
 // ------------------------------------------------------------------------------------------------
 // Image Base implementation.

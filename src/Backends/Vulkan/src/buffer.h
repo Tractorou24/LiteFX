@@ -2,7 +2,12 @@
 
 #include <litefx/rendering.hpp>
 #include <litefx/backends/vulkan.hpp>
+
+#if defined _WIN32 || defined WINCE
 #include <vma/vk_mem_alloc.h>
+#else
+#include <vk_mem_alloc.h>
+#endif
 
 #pragma warning(push)
 #pragma warning(disable:4250) // Base class members are inherited via dominance.
