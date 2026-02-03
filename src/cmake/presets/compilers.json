@@ -9,7 +9,8 @@
       "hidden": true,
       "inherits": "windows",
       "environment": {
-        "CXX": "cl"
+        "CXX": "cl",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
       }
     },
     {
@@ -17,7 +18,8 @@
       "hidden": true,
       "inherits": "linux",
       "cacheVariables": {
-        "CMAKE_CXX_COMPILER": "g++"
+        "CMAKE_CXX_COMPILER": "g++",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
       }
     },
     {
