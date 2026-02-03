@@ -12,9 +12,9 @@
 #define LITEFX_CODECVT_USE_WIN32
 #include <Windows.h>
 #else
-// Continue using std::codecvt for now, since other platforms than Win32 are currently unsupported anyway.
-#include <locale>
-#include <codecvt>
+#include <clocale>
+#include <cwchar>
+#include <cstring>
 #endif
 
 namespace LiteFX {
@@ -94,7 +94,7 @@ namespace LiteFX {
     }
 
     /// <summary>
-    /// Converts an UTF-8 single-byte encoded string into an UTF-16 representation.
+    /// Converts an UTF-8 single-byte encoded string into an wide multi-byte string (UTF-16 on Windows, UTF-32 on Linux).
     /// </summary>
     /// <param name="utf8"></param>
     /// <returns></returns>
@@ -114,34 +114,76 @@ namespace LiteFX {
 
         return result;
 #else
-        std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> conv;
-        return conv.from_bytes(utf8.data());
+    // Ensure the system has a UTF-8 locale set.
+    const char* original = std::setlocale(LC_CTYPE, nullptr);
+    const bool modified = !original || std::strstr(original, "UTF-8") == nullptr;
+    if (modified)
+        std::setlocale(LC_CTYPE, "C.UTF-8");
+
+    // Determine the size of the resulting wide string.
+    mbstate_t state = {0};
+    const char* src = utf8.data();
+    const auto size = std::mbsrtowcs(nullptr, &src, 0, &state);
+    if (size == static_cast<std::size_t>(-1))
+        throw std::runtime_error("Unable to convert string to UTF-16.");
+
+    // Convert the string.
+    WString result(size, 0);
+    state = {0};
+    src = utf8.data();
+    std::mbsrtowcs(result.data(), &src, size + 1, &state);
+
+    // Restore the original locale if modified.
+    if(modified && original)
+        std::setlocale(LC_CTYPE, original);
+    return result;
 #endif
     }
 
     /// <summary>
-    /// Converts an UTF-16 multi-byte encoded string into an UTF-8 representation.
+    /// Converts a wide multi-byte encoded string (UTF-16 on Windows, UTF-32 on Linux) into an UTF-8 representation.
     /// </summary>
-    /// <param name="utf16"></param>
+    /// <param name="wide"></param>
     /// <returns></returns>
-    inline String Narrow(WStringView utf16)
+    inline String Narrow(WStringView wide)
     {
 #if defined LITEFX_CODECVT_USE_WIN32
-        if (utf16.empty())
+        if (wide.empty())
             return "";
 
-        const auto size = ::WideCharToMultiByte(CP_UTF8, 0, utf16.data(), static_cast<int>(utf16.size()), nullptr, 0, nullptr, nullptr);
+        const auto size = ::WideCharToMultiByte(CP_UTF8, 0, wide.data(), static_cast<int>(wide.size()), nullptr, 0, nullptr, nullptr);
 
         if (size <= 0)
             throw std::runtime_error("Unable to convert string to UTF-8: " + std::to_string(size));
 
         String result(size, 0);
-        ::WideCharToMultiByte(CP_UTF8, 0, utf16.data(), static_cast<int>(utf16.size()), result.data(), size, nullptr, nullptr);
+        ::WideCharToMultiByte(CP_UTF8, 0, wide.data(), static_cast<int>(wide.size()), result.data(), size, nullptr, nullptr);
 
         return result;
 #else
-        std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> conv;
-        return conv.to_bytes(utf16.data());
+        // Ensure the system has a UTF-8 locale set.
+        const char* original = std::setlocale(LC_CTYPE, nullptr);
+        const bool modified = !original || std::strstr(original, "UTF-8") == nullptr;
+        if (modified)
+            std::setlocale(LC_CTYPE, "C.UTF-8");
+
+        // Determine the size of the resulting narrow string.
+        mbstate_t state = {0};
+        const wchar_t* src = wide.data();
+        const auto size = std::wcsrtombs(nullptr, &src, 0, &state);
+        if (size == static_cast<std::size_t>(-1))
+            throw std::runtime_error("Unable to convert string to UTF-8.");
+
+        // Convert the string.
+        String result(size, 0);
+        state = {0};
+        src = wide.data();
+        std::wcsrtombs(result.data(), &src, size + 1, &state);
+
+        // Restore the original locale if modified.
+        if(modified && original)
+            std::setlocale(LC_CTYPE, original);
+        return result;
 #endif
     }
 }
