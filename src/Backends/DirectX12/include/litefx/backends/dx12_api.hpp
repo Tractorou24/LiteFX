@@ -3,7 +3,7 @@
 #include <litefx/config.h>
 #include <litefx/backends/dx12_export.h>
 
-#if (!defined _WIN32 && !defined WINCE)
+#ifndef LITEFX_OS_WINDOWS
 #  pragma message ("DirectX12: The DirectX backend requires Windows to be built on.")
 #endif
 

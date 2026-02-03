@@ -6,7 +6,7 @@
 #include <litefx/backends/dx12_api.hpp>
 #include <litefx/backends/vulkan_api.hpp>
 
-#if (defined _WIN32 || defined WINCE)
+#ifdef LITEFX_OS_WINDOWS
 #  define GLFW_EXPOSE_NATIVE_WIN32
 #else 
 #  pragma message ("ImGui Integration Sample: No supported surface platform detected.")

@@ -8,7 +8,7 @@
 #include <algorithm>
 #include <ranges>
 
-#if defined _WIN32 || defined WINCE
+#ifdef LITEFX_OS_WINDOWS
 #define LITEFX_CODECVT_USE_WIN32
 #include <Windows.h>
 #else

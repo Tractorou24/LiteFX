@@ -175,10 +175,10 @@ int main(int /*argc*/, char* argv[])
     Array<String> extensions { VK_KHR_SURFACE_EXTENSION_NAME };
     Array<String> layers { "VK_LAYER_KHRONOS_validation", "VK_LAYER_KHRONOS_synchronization2" };
 
-#if defined(WIN32)
+#ifdef LITEFX_OS_WINDOWS
     // Enable Windows-specific extensions.
     extensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
-#endif // defined(WIN32)
+#endif // LITEFX_OS_WINDOWS
 
 	// Create the app.
 	try

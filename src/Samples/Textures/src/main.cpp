@@ -71,7 +71,7 @@ bool loadRenderDocApi()
 
 int main(const int argc, const char** argv) // NOLINT(bugprone-exception-escape)
 {
-#ifdef WIN32
+#ifdef LITEFX_OS_WINDOWS
 	// Enable console colors.
 	HANDLE console = ::GetStdHandle(STD_OUTPUT_HANDLE);
 	DWORD consoleMode = 0;

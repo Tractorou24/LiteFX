@@ -1,4 +1,5 @@
 #include <litefx/app.hpp>
+#include <litefx/platforms.h>
 
 using namespace LiteFX;
 
@@ -49,7 +50,7 @@ App::~App() noexcept
 
 Platform App::platform() const noexcept
 {
-#if defined(_WIN32) || defined(WINCE)
+#if LITEFX_OS_WINDOWS
 	return Platform::Win32;
 #else
 	return Platform::Other;

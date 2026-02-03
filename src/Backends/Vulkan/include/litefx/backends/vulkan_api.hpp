@@ -3,7 +3,7 @@
 #include <litefx/config.h>
 #include <litefx/backends/vulkan_export.h>
 
-#if (defined _WIN32 || defined WINCE)
+#ifdef LITEFX_OS_WINDOWS
 #  define VK_USE_PLATFORM_WIN32_KHR
 #endif
 

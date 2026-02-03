@@ -3,7 +3,7 @@
 #include <litefx/rendering.hpp>
 #include <litefx/backends/vulkan.hpp>
 
-#if defined _WIN32 || defined WINCE
+#ifdef LITEFX_OS_WINDOWS
 #include <vma/vk_mem_alloc.h>
 #else
 #include <vk_mem_alloc.h>
