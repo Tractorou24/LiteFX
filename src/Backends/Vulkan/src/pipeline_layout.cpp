@@ -42,6 +42,7 @@ public:
             emptySets.append_range(std::move(range));
 #else
             emptySets.insert(emptySets.end(), range.cbegin(), range.cend());
+#endif
         }
 
         for (Tuple<UInt32, UInt32> spaces : descriptorLayouts |
