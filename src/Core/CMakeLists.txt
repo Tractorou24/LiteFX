@@ -9,11 +9,11 @@ MESSAGE(STATUS "Initializing: ${PROJECT_NAME}...")
 
 CONFIGURE_FILE("config.tmpl" "${CMAKE_CURRENT_BINARY_DIR}/include/litefx/config.h")
 CONFIGURE_FILE("version.tmpl" "${CMAKE_CURRENT_BINARY_DIR}/include/litefx/version.h")
-CONFIGURE_FILE("core.tmpl" "${CMAKE_CURRENT_BINARY_DIR}/include/litefx/core.h")
 
 # Collect header & source files.
 SET(CORE_HEADERS
     "include/litefx/containers.hpp"
+    "include/litefx/core.h"
     "include/litefx/string.hpp"
     "include/litefx/traits.hpp"
     "include/litefx/exceptions.hpp"
@@ -29,7 +29,6 @@ ADD_LIBRARY(${PROJECT_NAME} STATIC
     ${CORE_SOURCES}
     "${CMAKE_CURRENT_BINARY_DIR}/include/litefx/config.h"
     "${CMAKE_CURRENT_BINARY_DIR}/include/litefx/version.h"
-    "${CMAKE_CURRENT_BINARY_DIR}/include/litefx/core.h"
 
     ".natvis"
 )
@@ -50,7 +49,7 @@ SET_TARGET_PROPERTIES(${PROJECT_NAME} PROPERTIES
     DEFINE_SYMBOL ""
     MAP_IMPORTED_CONFIG_RELWITHDEBINFO "Debug"
     MAP_IMPORTED_CONFIG_MINSIZEREL "Release"
-    PUBLIC_HEADER "${CORE_HEADERS};${CMAKE_CURRENT_BINARY_DIR}/include/litefx/config.h;${CMAKE_CURRENT_BINARY_DIR}/include/litefx/version.h;${CMAKE_CURRENT_BINARY_DIR}/include/litefx/core.h"
+    PUBLIC_HEADER "${CORE_HEADERS};${CMAKE_CURRENT_BINARY_DIR}/include/litefx/config.h;${CMAKE_CURRENT_BINARY_DIR}/include/litefx/version.h"
 )
 
 TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME}
