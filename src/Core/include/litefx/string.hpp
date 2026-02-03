@@ -13,6 +13,7 @@
 #include <Windows.h>
 #else
 // Continue using std::codecvt for now, since other platforms than Win32 are currently unsupported anyway.
+#include <locale>
 #include <codecvt>
 #endif
 
