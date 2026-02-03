@@ -1850,7 +1850,7 @@ namespace LiteFX::Rendering {
         struct ImageInfo 
         {
             /// @brief Stores the desired format of the image.
-            Format Format{ Format::R8G8B8A8_SRGB };
+            Rendering::Format Format{ Format::R8G8B8A8_SRGB };
 
             /// @brief Stores the dimensions of the image.
             ImageDimensions Dimensions{ ImageDimensions::DIM_2 };
