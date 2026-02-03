@@ -9,11 +9,11 @@ MESSAGE(STATUS "Initializing: ${PROJECT_NAME}...")
 
 CONFIGURE_FILE("config.tmpl" "${CMAKE_CURRENT_BINARY_DIR}/include/litefx/config.h")
 CONFIGURE_FILE("version.tmpl" "${CMAKE_CURRENT_BINARY_DIR}/include/litefx/version.h")
-CONFIGURE_FILE("core.tmpl" "${CMAKE_CURRENT_BINARY_DIR}/include/litefx/core.h")
 
 # Collect header & source files.
 SET(CORE_HEADERS
     "include/litefx/containers.hpp"
+    "include/litefx/core.h"
     "include/litefx/string.hpp"
     "include/litefx/traits.hpp"
     "include/litefx/exceptions.hpp"
