@@ -269,7 +269,16 @@ void SampleApp::onInit()
         m_scissor = makeShared<Scissor>(RectF(0.f, 0.f, static_cast<Float>(width), static_cast<Float>(height)));
 
         auto adapter = m_adapterId.has_value() ? backend->findAdapter(m_adapterId) : backend->findAdapter(GpuPreference::Performance);
+#ifdef GLFW_EXPOSE_NATIVE_WIN32
         auto surface = backend->createSurface(::glfwGetWin32Window(window));
+#else
+        auto surface = backend->createSurface([&](const typename TBackend::handle_type& instance)
+                                                 {
+                                                     typename TBackend::surface_type::handle_type vk_surface = nullptr;
+                                                     glfwCreateWindowSurface(instance, window, nullptr, &vk_surface);
+                                                     return vk_surface;
+                                                 });
+#endif
 
         // Create the device.
         auto device = std::addressof(backend->createDevice("Default", *adapter, std::move(surface), Format::B8G8R8A8_UNORM, m_viewport->getRectangle().extent(), backBuffers, false));

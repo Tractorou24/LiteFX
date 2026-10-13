@@ -1,3 +1,4 @@
 *.h
 !litefx.h
 !platforms.h
+!core.h

@@ -23,7 +23,6 @@ SET(CORE_HEADERS
 SET(CORE_GENERATED_HEADERS
     "${CMAKE_CURRENT_BINARY_DIR}/include/litefx/config.h"
     "${CMAKE_CURRENT_BINARY_DIR}/include/litefx/version.h"
-    "${CMAKE_CURRENT_BINARY_DIR}/include/litefx/core.h"
 )
 
 SET(CORE_SOURCES

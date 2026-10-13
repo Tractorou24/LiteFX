@@ -256,6 +256,7 @@ void SampleApp::onInit()
         m_scissor = makeShared<Scissor>(RectF(0.f, 0.f, static_cast<Float>(width), static_cast<Float>(height)));
 
         auto adapter = m_adapterId.has_value() ? backend->findAdapter(m_adapterId) : backend->findAdapter(GpuPreference::Performance);
+#ifdef GLFW_EXPOSE_NATIVE_WIN32
         auto surface = backend->createSurface(::glfwGetWin32Window(window));
 #else
         auto surface = backend->createSurface([&](const typename TBackend::handle_type& instance)

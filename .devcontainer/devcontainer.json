@@ -1,0 +1,11 @@
+{
+    "name": "Build Tools",
+    "build": {
+        "dockerfile": "Dockerfile"
+    },
+    "runArgs": [
+        "--gpus",
+        "all"
+    ],
+    "remoteUser": "root"
+}

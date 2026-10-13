@@ -143,6 +143,7 @@ int main(const int argc, const char** argv) // NOLINT(bugprone-exception-escape)
 
 	for (uint32_t i(0); i < extensions; ++i)
 		requiredExtensions.emplace_back(extensionNames[i]); // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+	requiredExtensions.emplace_back("VK_KHR_surface");
 
 	// Create the app.
 	try 
