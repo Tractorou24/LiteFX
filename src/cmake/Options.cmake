@@ -28,15 +28,25 @@ ENDIF(LITEFX_BUILD_TESTS)
 # NOTE: In order for this to work, you should add the RenderDoc installation path to the PATH environment variable, so that the runtime can pick up the API dll.
 OPTION(LITEFX_BUILD_EXAMPLES_RENDERDOC_LOADER "Adds code to the samples to create additional RenderDoc capture triggers for simplified debugging, when starting with --load-render-doc=1 command line argument." OFF)
 
+IF(LITEFX_BUILD_EXAMPLES_RENDERDOC_LOADER)
+  FIND_PATH(RENDERDOC_INCLUDE_DIR "renderdoc_app.h")
+
+  IF(NOT RENDERDOC_INCLUDE_DIR)
+    MESSAGE(WARNING "RenderDoc is not installed on the system. Loader will not be created.")
+    SET(LITEFX_BUILD_EXAMPLES_RENDERDOC_LOADER OFF)
+  ENDIF(NOT RENDERDOC_INCLUDE_DIR)
+ENDIF(LITEFX_BUILD_EXAMPLES_RENDERDOC_LOADER)
+
 OPTION(LITEFX_BUILD_WITH_GLM "Enables glm converters for math types." ON)
 OPTION(LITEFX_BUILD_WITH_DIRECTX_MATH "Enables DirectXMath converters for math types." ON)
 
 FIND_PROGRAM(LITEFX_BUILD_GLSLC_COMPILER glslc HINTS ENV VULKAN_SDK PATH_SUFFIXES bin DOC "The full path to the `glslc.exe` shader compiler binary.")
-FIND_PROGRAM(LITEFX_BUILD_DXC_COMPILER dxc HINTS ${DIRECTX_DXC_TOOL} ENV VULKAN_SDK PATH_SUFFIXES bin DOC "The full path to the `dxc.exe` shader compiler binary.")
+FIND_PROGRAM(LITEFX_BUILD_DXC_COMPILER dxc HINTS ENV VULKAN_SDK PATH_SUFFIXES bin PATHS "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/tools/directx-dxc" DOC "The full path to the `dxc.exe` shader compiler binary.")
 
 SET(LITEFX_BUILD_HLSL_SHADER_MODEL "6_5" CACHE STRING "Shader model version used to compile HLSL shaders.")
 
-OPTION(LITEFX_BUILD_PRECOMPILED_HEADERS "Use pre-compiled headers during build." OFF)
+# Deprecated (has no effect anymore).
+OPTION(LITEFX_BUILD_PRECOMPILED_HEADERS "Use pre-compiled headers during build (deprecated)." OFF)
 
 SET(LITEFX_BUILD_ENGINE_IDENTIFIER "LiteFX" CACHE STRING "Defines the engine identifier string.")
 
@@ -51,3 +61,11 @@ IF("imgui" IN_LIST VCPKG_MANIFEST_FEATURES)
 ELSEIF(NOT LITEFX_BUILD_WITH_IMGUI_SAMPLE)
   SET(LITEFX_BUILD_WITH_IMGUI_SAMPLE OFF CACHE BOOL "Enables building the ImGui sample.")
 ENDIF("imgui" IN_LIST VCPKG_MANIFEST_FEATURES)
+
+# Documentation settings
+OPTION(LITEFX_BUILD_DOCUMENTATION "Adds the LiteFX.Documentation target, which generates the API reference for the website using MrDocs." OFF)
+
+IF(LITEFX_BUILD_DOCUMENTATION)
+    # Compile commands are read by MrDocs.
+    SET(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+ENDIF(LITEFX_BUILD_DOCUMENTATION)

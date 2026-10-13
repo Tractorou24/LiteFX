@@ -1,12 +1,13 @@
 #include "sample.h"
 #include <glm/gtc/matrix_transform.hpp>
 
-enum DescriptorSets : UInt32 // NOLINT(performance-enum-size)
+enum DescriptorSets : UInt32 // NOLINT(performance-enum-size, cppcoreguidelines-use-enum-class)
 {
     Constant = 0,                                       // All buffers that are immutable.
     PerFrame = 1,                                       // All buffers that are updated each frame.
 };
 
+// NOLINTBEGIN(bugprone-throwing-static-initialization)
 const Array<Vertex> vertices =
 {
     { { -0.5f, -0.5f, 0.5f }, { 1.0f, 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f } },
@@ -17,6 +18,7 @@ const Array<Vertex> vertices =
 
 const Array<UInt16> indices = { 0, 2, 1, 0, 1, 3, 0, 3, 2, 1, 2, 3 };
 
+// NOLINTEND(bugprone-throwing-static-initialization)
 // NOLINTBEGIN(cppcoreguidelines-avoid-non-const-global-variables)
 
 struct CameraBuffer {
@@ -37,11 +39,11 @@ struct FileExtensions {
 
 #ifdef LITEFX_BUILD_VULKAN_BACKEND
 template<>
-const String FileExtensions<VulkanBackend>::SHADER = "spv";
+const String FileExtensions<VulkanBackend>::SHADER = "spv"; // NOLINT(bugprone-throwing-static-initialization)
 #endif // LITEFX_BUILD_VULKAN_BACKEND
 #ifdef LITEFX_BUILD_DIRECTX_12_BACKEND
 template<>
-const String FileExtensions<DirectX12Backend>::SHADER = "dxi";
+const String FileExtensions<DirectX12Backend>::SHADER = "dxi"; // NOLINT(bugprone-throwing-static-initialization)
 #endif // LITEFX_BUILD_DIRECTX_12_BACKEND
 
 template<typename TRenderBackend> requires
@@ -227,11 +229,7 @@ void SampleApp::onInit()
         m_viewport = makeShared<Viewport>(RectF(0.f, 0.f, static_cast<Float>(width), static_cast<Float>(height)));
         m_scissor = makeShared<Scissor>(RectF(0.f, 0.f, static_cast<Float>(width), static_cast<Float>(height)));
 
-        auto adapter = backend->findAdapter(m_adapterId);
-
-        if (adapter == nullptr)
-            adapter = backend->findAdapter(std::nullopt);
-
+        auto adapter = m_adapterId.has_value() ? backend->findAdapter(m_adapterId) : backend->findAdapter(GpuPreference::Performance);
 #ifdef GLFW_EXPOSE_NATIVE_WIN32
         auto surface = backend->createSurface(::glfwGetWin32Window(window));
 #else
@@ -288,7 +286,7 @@ void SampleApp::onResize(const void* /*sender*/, const ResizeEventArgs& e)
         frameBuffer.resize(renderArea);
 
         // Update the post-processing bindings that reference the "opaque" frame buffer.
-        m_device->state().descriptorSet(std::format("Post Bindings {0}", i)).update(0, frameBuffer["Color Target"]);
+        m_device->state().descriptorSet(std::format("Post Bindings {0}", i)).update(0, frameBuffer["Color Target"]); // NOLINT(cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
     }
 
     // Also resize viewport and scissor.
@@ -463,11 +461,10 @@ void SampleApp::drawFrame()
         commandBuffer->use(postPipeline);
 
         // Get the image from the back buffer of the geometry pass.
-        auto& image = frameBuffer["Color Target"];
+        auto& image = frameBuffer["Color Target"]; // NOLINT(cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
 
         // Create a barrier that handles image transition.
         auto barrier = m_device->makeBarrier(PipelineStage::None, PipelineStage::Compute);
-        barrier->transition(image, ResourceAccess::None, ResourceAccess::ShaderReadWrite, ImageLayout::ShaderResource, ImageLayout::ReadWrite);
         commandBuffer->barrier(*barrier);
 
         // Bind the image to the texture descriptor.
@@ -478,7 +475,6 @@ void SampleApp::drawFrame()
 
         // After post-processing, transition the image back into a state where it can be copied from.
         barrier = m_device->makeBarrier(PipelineStage::Compute, PipelineStage::None);
-        barrier->transition(image, ResourceAccess::ShaderReadWrite, ResourceAccess::None, ImageLayout::ReadWrite, ImageLayout::CopySource);
         commandBuffer->barrier(*barrier);
 
         // Submit the command buffer.
@@ -493,6 +489,7 @@ void SampleApp::drawFrame()
 
         // Transition the image back into `CopyDestination` layout.
         barrier = m_device->makeBarrier(PipelineStage::None, PipelineStage::Transfer);
+        barrier->transition(image, ResourceAccess::None, ResourceAccess::TransferRead, ImageLayout::Common, ImageLayout::CopySource);
         barrier->transition(*m_device->swapChain().image(backBuffer), ResourceAccess::None, ResourceAccess::TransferWrite, ImageLayout::Undefined, ImageLayout::CopyDestination);
         commandBuffer->barrier(*barrier);
 
@@ -500,10 +497,10 @@ void SampleApp::drawFrame()
         commandBuffer->transfer(image, *m_device->swapChain().image(backBuffer));
 
         // Transition the image back into `Present` layout.
-        // NOTE: It is important to transition the frame buffer image back into "Shader Resource", as frame buffer color images are always expected to be in this state, when no
+        // NOTE: It is important to transition the frame buffer image back into "Common", as frame buffer color images are always expected to be in this state, when no
         //       render pass is currently rendering to them.
         barrier = m_device->makeBarrier(PipelineStage::Transfer, PipelineStage::Resolve);
-        barrier->transition(image, ResourceAccess::TransferRead, ResourceAccess::Common, ImageLayout::CopySource, ImageLayout::ShaderResource);
+        barrier->transition(image, ResourceAccess::TransferRead, ResourceAccess::Common, ImageLayout::CopySource, ImageLayout::Common);
         barrier->transition(*m_device->swapChain().image(backBuffer), ResourceAccess::TransferWrite, ResourceAccess::Common, ImageLayout::CopyDestination, ImageLayout::Present);
         commandBuffer->barrier(*barrier);
 

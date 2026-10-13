@@ -21,6 +21,9 @@ enum class DescriptorSets : UInt32 // NOLINT(performance-enum-size)
     Sampler      = 4  // Skybox sampler state.
 };
 
+// NOLINTBEGIN(bugprone-throwing-static-initialization)
+// NOLINTBEGIN(cppcoreguidelines-avoid-non-const-global-variables)
+
 const Array<Vertex> vertices {
     { { -0.5f,  0.5f, -0.5f }, { 0.33f, 0.33f, 0.33f, 1.0f }, { 0.0f,  1.0f, 0.0f }, { 0.0f, 0.0f } },
     { {  0.5f,  0.5f, -0.5f }, { 0.33f, 0.33f, 0.33f, 1.0f }, { 0.0f,  1.0f, 0.0f }, { 0.0f, 0.0f } },
@@ -57,8 +60,6 @@ const Array<UInt16> indices {
     20, 22, 21, 21, 22, 23  // Top
 };
 
-// NOLINTBEGIN(cppcoreguidelines-avoid-non-const-global-variables)
-
 struct CameraBuffer {
     glm::mat4 ViewProjection;
     glm::mat4 InverseView;
@@ -70,6 +71,7 @@ struct MaterialData { // NOLINT(cppcoreguidelines-avoid-c-arrays)
 } materials[NUM_INSTANCES];
 
 // NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables)
+// NOLINTEND(bugprone-throwing-static-initialization)
 
 struct alignas(8) GeometryData { // NOLINT(cppcoreguidelines-avoid-magic-numbers)
     UInt32 Index;
@@ -85,11 +87,11 @@ struct FileExtensions {
 
 #ifdef LITEFX_BUILD_VULKAN_BACKEND
 template<>
-const String FileExtensions<VulkanBackend>::SHADER = "spv";
+const String FileExtensions<VulkanBackend>::SHADER = "spv"; // NOLINT(bugprone-throwing-static-initialization)
 #endif // LITEFX_BUILD_VULKAN_BACKEND
 #ifdef LITEFX_BUILD_DIRECTX_12_BACKEND
 template<>
-const String FileExtensions<DirectX12Backend>::SHADER = "dxi";
+const String FileExtensions<DirectX12Backend>::SHADER = "dxi"; // NOLINT(bugprone-throwing-static-initialization)
 #endif // LITEFX_BUILD_DIRECTX_12_BACKEND
 
 template<typename TRenderBackend> requires
@@ -158,8 +160,8 @@ void SampleApp::initBuffers(IRenderBackend* /*backend*/)
 
     // Before building the acceleration structures the GPU needs to wait for the transfer to finish.
     auto barrier = m_device->makeBarrier(PipelineStage::Transfer, PipelineStage::AccelerationStructureBuild);
-    barrier->transition(*vertexBuffer, ResourceAccess::TransferWrite, ResourceAccess::Common);
-    barrier->transition(*indexBuffer, ResourceAccess::TransferWrite, ResourceAccess::Common);
+    barrier->transition(*vertexBuffer, ResourceAccess::TransferWrite, ResourceAccess::ShaderRead);
+    barrier->transition(*indexBuffer, ResourceAccess::TransferWrite, ResourceAccess::ShaderRead);
     commandBuffer->barrier(*barrier);
 
     // Pre-build acceleration structures. We start with 2 bottom-level acceleration structures (BLAS) for our simple geometry and a few top-level acceleration structures (TLAS) for the 
@@ -182,7 +184,7 @@ void SampleApp::initBuffers(IRenderBackend* /*backend*/)
     auto blasBuffer = m_device->factory().createBuffer("BLAS", BufferType::AccelerationStructure, ResourceHeap::Resource, static_cast<size_t>(reflectiveOffset + reflectiveSize), 1u, ResourceUsage::AllowWrite);
 
     // Orient instances randomly.
-    std::srand(static_cast<UInt32>(std::time(nullptr)));
+    std::srand(static_cast<UInt32>(std::time(nullptr))); // NOLINT(bugprone-random-generator-seed)
 
     // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers)
     auto tlas = m_device->factory().createTopLevelAccelerationStructure("TLAS", AccelerationStructureFlags::AllowCompaction | AccelerationStructureFlags::MinimizeMemory);
@@ -395,11 +397,7 @@ void SampleApp::onInit()
         int width{}, height{};
         ::glfwGetFramebufferSize(window, &width, &height);
 
-        auto adapter = backend->findAdapter(m_adapterId);
-
-        if (adapter == nullptr)
-            adapter = backend->findAdapter(std::nullopt);
-
+        auto adapter = m_adapterId.has_value() ? backend->findAdapter(m_adapterId) : backend->findAdapter(GpuPreference::Performance);
 #ifdef GLFW_EXPOSE_NATIVE_WIN32
         auto surface = backend->createSurface(::glfwGetWin32Window(window));
 #else

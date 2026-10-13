@@ -68,7 +68,7 @@ public:
 			throw std::runtime_error("Unable to compile shader file.");
 
 #ifndef NDEBUG
-		m_device->setDebugName(module, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT, std::format("{0}: {1}", m_fileName, m_entryPoint));
+		m_device->setDebugName(module, VK_OBJECT_TYPE_SHADER_MODULE, std::format("{0}: {1}", m_fileName, m_entryPoint));
 #endif
 
 		return module;
@@ -121,11 +121,12 @@ const Array<UInt32>& VulkanShaderModule::bytecode() const noexcept
 
 VkPipelineShaderStageCreateInfo VulkanShaderModule::shaderStageDefinition() const
 {
-	VkPipelineShaderStageCreateInfo shaderStageDefinition = {};
-	shaderStageDefinition.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	shaderStageDefinition.module = this->handle();
-	shaderStageDefinition.pName = this->entryPoint().c_str();
-	shaderStageDefinition.stage = Vk::getShaderStage(this->type());
+	VkPipelineShaderStageCreateInfo shaderStageDefinition = {
+		.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+		.stage = Vk::getShaderStage(this->type()),
+		.module = this->handle(),
+		.pName = this->entryPoint().c_str()
+	};
 
 	return shaderStageDefinition;
 }

@@ -731,14 +731,24 @@ PrimitiveTopology LiteFX::Rendering::Backends::Vk::getPrimitiveTopology(const Vk
 	{
 	case VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_LINE_LIST:
 		return PrimitiveTopology::LineList;
+	case VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY:
+		return PrimitiveTopology::LineListWithAdjacency;
 	case VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_LINE_STRIP:
 		return PrimitiveTopology::LineStrip;
+	case VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY:
+		return PrimitiveTopology::LineStripWithAdjacency;
 	case VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST:
 		return PrimitiveTopology::TriangleList;
+	case VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY:
+		return PrimitiveTopology::TriangleListWithAdjacency;
 	case VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP:
 		return PrimitiveTopology::TriangleStrip;
+	case VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY:
+		return PrimitiveTopology::TriangleStripWithAdjacency;
 	case VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_POINT_LIST:
 		return PrimitiveTopology::PointList;
+	case VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_PATCH_LIST:
+		return PrimitiveTopology::PatchList;
 	default:
 		throw std::invalid_argument("Unsupported primitive topology.");
 	}
@@ -750,14 +760,24 @@ VkPrimitiveTopology LiteFX::Rendering::Backends::Vk::getPrimitiveTopology(Primit
 	{
 	case PrimitiveTopology::LineList:
 		return VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+	case PrimitiveTopology::LineListWithAdjacency:
+		return VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY;
 	case PrimitiveTopology::LineStrip:
 		return VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
-	case PrimitiveTopology::PointList:
-		return VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+	case PrimitiveTopology::LineStripWithAdjacency:
+		return VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY;
 	case PrimitiveTopology::TriangleList:
 		return VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+	case PrimitiveTopology::TriangleListWithAdjacency:
+		return VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY;
 	case PrimitiveTopology::TriangleStrip:
 		return VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+	case PrimitiveTopology::TriangleStripWithAdjacency:
+		return VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY;
+	case PrimitiveTopology::PointList:
+		return VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+	case PrimitiveTopology::PatchList:
+		return VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
 	default:
 		throw std::invalid_argument("Unsupported primitive topology.");
 	}
@@ -1017,7 +1037,7 @@ VkPipelineStageFlags2 LITEFX_VULKAN_API LiteFX::Rendering::Backends::Vk::getPipe
 		sync |= VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
 
 	if (LITEFX_FLAG_IS_SET(pipelineStage, PipelineStage::DepthStencil))
-		sync |= VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT;
+		sync |= VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT;
 
 	if (LITEFX_FLAG_IS_SET(pipelineStage, PipelineStage::Indirect))
 		sync |= VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT;
@@ -1053,7 +1073,7 @@ VkAccessFlags2 LITEFX_VULKAN_API LiteFX::Rendering::Backends::Vk::getResourceAcc
 	VkAccessFlags2 access = { };
 
 	if (LITEFX_FLAG_IS_SET(resourceAccess, ResourceAccess::Common))
-		access |= (VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT);
+		access |= VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT;
 
 	if (LITEFX_FLAG_IS_SET(resourceAccess, ResourceAccess::VertexBuffer))
 		access |= VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT;
@@ -1065,7 +1085,7 @@ VkAccessFlags2 LITEFX_VULKAN_API LiteFX::Rendering::Backends::Vk::getResourceAcc
 		access |= VK_ACCESS_2_UNIFORM_READ_BIT;
 
 	if (LITEFX_FLAG_IS_SET(resourceAccess, ResourceAccess::RenderTarget))
-		access |= VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT;
+		access |= VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
 
 	if (LITEFX_FLAG_IS_SET(resourceAccess, ResourceAccess::DepthStencilRead))
 		access |= VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
@@ -1089,10 +1109,10 @@ VkAccessFlags2 LITEFX_VULKAN_API LiteFX::Rendering::Backends::Vk::getResourceAcc
 		access |= VK_ACCESS_2_TRANSFER_WRITE_BIT;
 
 	if (LITEFX_FLAG_IS_SET(resourceAccess, ResourceAccess::ResolveRead))
-		access |= VK_ACCESS_2_MEMORY_READ_BIT;
+		access |= VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT;
 
 	if (LITEFX_FLAG_IS_SET(resourceAccess, ResourceAccess::ResolveWrite))
-		access |= VK_ACCESS_2_MEMORY_WRITE_BIT;
+		access |= VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
 
 	if (LITEFX_FLAG_IS_SET(resourceAccess, ResourceAccess::AccelerationStructureRead))
 		access |= VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR;

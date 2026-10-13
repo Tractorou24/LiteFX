@@ -1,15 +1,21 @@
 #include <litefx/backends/vulkan.hpp>
 #include <litefx/logging.hpp>
 
+#ifdef LITEFX_BUILD_DIRECTX_12_BACKEND
+#include <dxgi1_6.h>
+#include <wrl/client.h>
+#endif // LITEFX_BUILD_DIRECTX_12_BACKEND
+
 using namespace LiteFX::Rendering::Backends;
 
 // Exported extensions (we should probably find a better solution for this).
 // NOLINTBEGIN(cppcoreguidelines-avoid-non-const-global-variables)
-PFN_vkCreateDebugUtilsMessengerEXT   vkCreateDebugUtilsMessenger;
-PFN_vkDestroyDebugUtilsMessengerEXT  vkDestroyDebugUtilsMessenger;
-PFN_vkQueueBeginDebugUtilsLabelEXT   vkQueueBeginDebugUtilsLabel;
-PFN_vkQueueEndDebugUtilsLabelEXT     vkQueueEndDebugUtilsLabel;
-PFN_vkQueueInsertDebugUtilsLabelEXT  vkQueueInsertDebugUtilsLabel;
+PFN_vkCreateDebugUtilsMessengerEXT   vkCreateDebugUtilsMessenger{ nullptr };
+PFN_vkDestroyDebugUtilsMessengerEXT  vkDestroyDebugUtilsMessenger{ nullptr };
+PFN_vkQueueBeginDebugUtilsLabelEXT   vkQueueBeginDebugUtilsLabel{ nullptr };
+PFN_vkQueueEndDebugUtilsLabelEXT     vkQueueEndDebugUtilsLabel{ nullptr };
+PFN_vkQueueInsertDebugUtilsLabelEXT  vkQueueInsertDebugUtilsLabel{ nullptr };
+PFN_vkSetDebugUtilsObjectNameEXT     vkSetDebugUtilsObjectName{ nullptr };
 // NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables)
 
 // ------------------------------------------------------------------------------------------------
@@ -116,7 +122,7 @@ private:
     }
 
 public:
-    VkInstance initialize(const App& app)
+    VkInstance initialize(const App& app, void* instanceExtensionObjects)
     {
         // Check if all extensions are available.
         if (!VulkanBackend::validateInstanceExtensions(m_extensions))
@@ -144,24 +150,18 @@ public:
         };
 
         // Create Vulkan instance.
-        VkInstanceCreateInfo createInfo {
-            .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
-            .pApplicationInfo = &appInfo,
-            .enabledLayerCount = static_cast<UInt32>(enabledLayers.size()),
-            .ppEnabledLayerNames = enabledLayers.data(),
-            .enabledExtensionCount = static_cast<UInt32>(requiredExtensions.size()),
-            .ppEnabledExtensionNames = requiredExtensions.data()
-        };
+        void* pNext = instanceExtensionObjects;
 
 #ifndef NDEBUG
-        VkDebugUtilsMessengerCreateInfoEXT debugMessageCallbackInfo {
+        VkDebugUtilsMessengerCreateInfoEXT debugMessageCallbackInfo{
             .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
+            .pNext = instanceExtensionObjects,
             .messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT,
             .messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT,
             .pfnUserCallback = &onDebugMessage
         };
 
-        VkDebugUtilsMessengerCreateInfoEXT debugBreakCallbackInfo {
+        VkDebugUtilsMessengerCreateInfoEXT debugBreakCallbackInfo{
             .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
             .pNext = &debugMessageCallbackInfo,
             .messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT,
@@ -169,8 +169,19 @@ public:
             .pfnUserCallback = &onDebugBreak
         };
 
-        createInfo.pNext = &debugBreakCallbackInfo;
+        pNext = &debugBreakCallbackInfo;
 #endif
+
+        VkInstanceCreateInfo createInfo {
+            .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
+            .pNext = pNext,
+            .pApplicationInfo = &appInfo,
+            .enabledLayerCount = static_cast<UInt32>(enabledLayers.size()),
+            .ppEnabledLayerNames = enabledLayers.data(),
+            .enabledExtensionCount = static_cast<UInt32>(requiredExtensions.size()),
+            .ppEnabledExtensionNames = requiredExtensions.data()
+        };
+
         VkInstance instance{};
         raiseIfFailed(::vkCreateInstance(&createInfo, nullptr, &instance), "Unable to create Vulkan instance.");
 
@@ -181,6 +192,7 @@ public:
         vkQueueBeginDebugUtilsLabel     = reinterpret_cast<PFN_vkQueueBeginDebugUtilsLabelEXT>(::vkGetInstanceProcAddr(instance, "vkQueueBeginDebugUtilsLabelEXT"));
         vkQueueEndDebugUtilsLabel       = reinterpret_cast<PFN_vkQueueEndDebugUtilsLabelEXT>(::vkGetInstanceProcAddr(instance, "vkQueueEndDebugUtilsLabelEXT"));
         vkQueueInsertDebugUtilsLabel    = reinterpret_cast<PFN_vkQueueInsertDebugUtilsLabelEXT>(::vkGetInstanceProcAddr(instance, "vkQueueInsertDebugUtilsLabelEXT"));
+        vkSetDebugUtilsObjectName       = reinterpret_cast<PFN_vkSetDebugUtilsObjectNameEXT>(::vkGetInstanceProcAddr(instance, "vkSetDebugUtilsObjectNameEXT"));
         // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
 
         if (vkCreateDebugUtilsMessenger == nullptr)
@@ -226,10 +238,10 @@ public:
 // Shared interface.
 // ------------------------------------------------------------------------------------------------
 
-VulkanBackend::VulkanBackend(const App& app, Span<String> extensions, Span<String> validationLayers) :
+VulkanBackend::VulkanBackend(const App& app, Span<String> extensions, Span<String> validationLayers, void* instanceExtensionObjects) :
     Resource<VkInstance>(nullptr), m_impl(extensions, validationLayers)
 {
-    this->handle() = m_impl->initialize(app);
+    this->handle() = m_impl->initialize(app, instanceExtensionObjects);
     m_impl->loadAdapters(*this);
 
     LITEFX_DEBUG(VULKAN_LOG, "--------------------------------------------------------------------------");
@@ -275,12 +287,53 @@ const Array<SharedPtr<const VulkanGraphicsAdapter>>& VulkanBackend::adapters() c
     return m_impl->m_adapters;
 }
 
-const VulkanGraphicsAdapter* VulkanBackend::findAdapter(const Optional<UInt64>& adapterId) const noexcept
+const VulkanGraphicsAdapter* VulkanBackend::findAdapter(const Optional<UInt64>& adapterId) const
 {
-    if (auto match = std::ranges::find_if(m_impl->m_adapters, [&adapterId](const auto& adapter) { return !adapterId.has_value() || adapter->uniqueId() == adapterId; }); match != m_impl->m_adapters.end()) [[likely]]
+    // We create a temporary copy of the adapters array here, which we can sort by the adapter type. This way we return dedicated GPUs before integrated GPUs, before software rasterizers and so on, if no
+    // adapter ID is specified.
+    auto adapters = m_impl->m_adapters;
+    std::ranges::sort(adapters, std::ranges::greater{}, &VulkanGraphicsAdapter::type);
+
+    if (auto match = std::ranges::find_if(adapters, [&adapterId](const auto& adapter) { return !adapterId.has_value() || adapter->uniqueId() == adapterId; }); match != adapters.end()) [[likely]]
         return match->get();
 
     return nullptr;
+}
+
+const VulkanGraphicsAdapter* VulkanBackend::findAdapter(GpuPreference preference) const
+{
+#ifdef LITEFX_BUILD_DIRECTX_12_BACKEND
+    // Get the first adapter for the preference.
+    Microsoft::WRL::ComPtr<IDXGIFactory7> factory;
+    Microsoft::WRL::ComPtr<IDXGIAdapter1> adapterInterface;
+
+    if (FAILED(::CreateDXGIFactory2(DXGI_CREATE_FACTORY_DEBUG, IID_PPV_ARGS(&factory))))
+    {
+        LITEFX_WARNING(VULKAN_LOG, "Unable to create DXGI factory for retrieving adapter preferences. Falling back to default adapter order.");
+        return this->findAdapter();
+    }
+
+    if (FAILED(factory->EnumAdapterByGpuPreference(0u, static_cast<DXGI_GPU_PREFERENCE>(preference), IID_PPV_ARGS(&adapterInterface))))
+    {
+        LITEFX_WARNING(VULKAN_LOG, "Unable acquire adapter preferences. Falling back to default adapter order.");
+        return this->findAdapter();
+    }
+
+    // Get the LUID.
+    UInt64 adapterId{};
+    DXGI_ADAPTER_DESC1 adapterDecriptor;
+
+    if (FAILED(adapterInterface->GetDesc1(&adapterDecriptor)))
+    {
+        LITEFX_WARNING(VULKAN_LOG, "Unable obtain LUID from preferred adapter. Falling back to default adapter order.");
+        return this->findAdapter();
+    }
+
+    std::memcpy(&adapterId, &adapterDecriptor.AdapterLuid, sizeof(LUID));
+    return this->findAdapter(adapterId);
+#else  // LITEFX_BUILD_DIRECTX_12_BACKEND
+    return this->findAdapter();
+#endif // LITEFX_BUILD_DIRECTX_12_BACKEND
 }
 
 void VulkanBackend::registerDevice(const String& name, SharedPtr<VulkanDevice>&& device)
@@ -289,7 +342,7 @@ void VulkanBackend::registerDevice(const String& name, SharedPtr<VulkanDevice>&&
         throw InvalidArgumentException("name", "The backend already contains a device with the name \"{0}\".", name);
 
 #ifndef NDEBUG
-    device->setDebugName(std::as_const(*device).handle(), VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, name);
+    device->setDebugName(std::as_const(*device).handle(), VK_OBJECT_TYPE_DEVICE, name);
 #endif
 
     m_impl->m_devices.insert(std::make_pair(name, std::move(device)));
@@ -307,7 +360,7 @@ void VulkanBackend::releaseDevice(const String& name)
     m_impl->m_devices.erase(name);
 }
 
-VulkanDevice* VulkanBackend::device(const String& name) noexcept
+VulkanDevice* VulkanBackend::device(const String& name)
 {
     if (!m_impl->m_devices.contains(name)) [[unlikely]]
         return nullptr;
@@ -315,7 +368,7 @@ VulkanDevice* VulkanBackend::device(const String& name) noexcept
     return m_impl->m_devices[name].get();
 }
 
-const VulkanDevice* VulkanBackend::device(const String& name) const noexcept
+const VulkanDevice* VulkanBackend::device(const String& name) const
 {
     if (!m_impl->m_devices.contains(name)) [[unlikely]]
         return nullptr;

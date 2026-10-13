@@ -8,7 +8,7 @@ An extensible, descriptive, modern computer graphics and rendering engine, writt
 
 <div align="center">
 
-[![GitHub](https://img.shields.io/github/license/crud89/litefx?style=flat-square)](https://github.com/crud89/LiteFX/blob/main/LICENSE) [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/crud89/litefx/weekly.yml?branch=main&style=flat-square)](https://github.com/crud89/LiteFX/actions/workflows/weekly.yml) [![Latest release](https://img.shields.io/github/release/crud89/litefx.svg?style=flat-square)](https://github.com/crud89/LiteFX/releases) [![Released at](https://img.shields.io/github/release-date/crud89/litefx.svg?style=flat-square)](https://github.com/crud89/LiteFX/tags) [![Issues](https://img.shields.io/github/issues/crud89/LiteFX?style=flat-square)](https://github.com/crud89/LiteFX/issues) [![Pull Requests](https://img.shields.io/github/issues-pr/crud89/LiteFX?style=flat-square)](https://github.com/crud89/LiteFX/pulls) [![Documentation](https://img.shields.io/badge/docs-gh--pages-70dcf4.svg?style=flat-square)](https://litefx.crudolph.io/docs/)
+[![GitHub](https://img.shields.io/github/license/crud89/litefx?style=flat-square)](https://github.com/crud89/LiteFX/blob/main/LICENSE) [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/crud89/litefx/weekly.yml?branch=main&event=schedule&style=flat-square)](https://github.com/crud89/LiteFX/actions/workflows/weekly.yml) [![Latest release](https://img.shields.io/github/release/crud89/litefx.svg?style=flat-square)](https://github.com/crud89/LiteFX/releases) [![Released at](https://img.shields.io/github/release-date/crud89/litefx.svg?style=flat-square)](https://github.com/crud89/LiteFX/tags) [![Issues](https://img.shields.io/github/issues/crud89/LiteFX?style=flat-square)](https://github.com/crud89/LiteFX/issues) [![Pull Requests](https://img.shields.io/github/issues-pr/crud89/LiteFX?style=flat-square)](https://github.com/crud89/LiteFX/pulls) [![Documentation](https://img.shields.io/badge/docs-gh--pages-70dcf4.svg?style=flat-square)](https://litefx.crudolph.io/latest/)
 
 </div>
 
@@ -31,15 +31,15 @@ UniquePtr<RenderPipeline> renderPipeline = device->buildRenderPipeline(*renderPa
         .cullOrder(CullOrder::ClockWise)
         .lineWidth(1.f))
     .layout(device->buildPipelineLayout()
-        .descriptorSet(DescriptorSets::Constant, ShaderStage::Vertex | ShaderStage::Fragment)
+        .descriptorSet(DescriptorSets::Constant, ShaderStage::Vertex | ShaderStage::Pixel)
             .withUniform(0, sizeof(CameraBuffer))
             .add()
         .descriptorSet(DescriptorSets::PerFrame, ShaderStage::Vertex)
             .withUniform(0, sizeof(TransformBuffer))
             .add())
     .shaderProgram(device->buildShaderProgram()
-        .withVertexShaderModule("shaders/basic_vs." + FileExtensions<TRenderBackend>::SHADER)
-        .withFragmentShaderModule("shaders/basic_fs." + FileExtensions<TRenderBackend>::SHADER));
+        .withVertexShaderModule("shaders/basic_vs." + FileExtensions<TRenderBackend>::SHADER, "VSMain")
+        .withPixelShaderModule("shaders/basic_fs." + FileExtensions<TRenderBackend>::SHADER), "PSMain");
 ```
 
 LiteFX is written in modern C++23, following established design patterns to make it easy to learn and adapt. Its focus is make the performance of modern graphics APIs easily accessible, whilst retaining full flexibility.

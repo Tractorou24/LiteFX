@@ -29,7 +29,7 @@ public:
     VulkanFrameBufferImpl& operator=(VulkanFrameBufferImpl&&) noexcept = default;
     VulkanFrameBufferImpl& operator=(const VulkanFrameBufferImpl&) = delete;
 
-    ~VulkanFrameBufferImpl() noexcept
+    ~VulkanFrameBufferImpl() // NOLINT(bugprone-exception-escape)
     {
         // Check if the device is still valid.
         auto device = m_device.lock();
@@ -116,7 +116,7 @@ public:
 #ifndef NDEBUG
         // Set debug names.
         std::ranges::for_each(m_images, [device](auto& image) {
-            device->setDebugName(std::as_const(*image).handle(), VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, image->name().c_str());
+            device->setDebugName(std::as_const(*image).handle(), VK_OBJECT_TYPE_IMAGE, image->name().c_str());
         });
 #endif
 	}
@@ -149,10 +149,7 @@ public:
                 auto newImage = this->createImage(*device, renderTargetId, renderArea, image->usage(), format, image->samples(), image->name());
                 imageReplacements[image.get()] = newImage;
 
-                if (::hasDepth(format) || ::hasStencil(format))
-                    barrier->transition(*newImage, ResourceAccess::None, ResourceAccess::None, ImageLayout::DepthRead);
-                else
-                    barrier->transition(*newImage, ResourceAccess::None, ResourceAccess::None, ImageLayout::ShaderResource);
+                barrier->transition(*newImage, ResourceAccess::None, ResourceAccess::None, ImageLayout::Common);
 
                 return newImage;
             }) 
@@ -198,7 +195,7 @@ VkImageView VulkanFrameBuffer::imageView(UInt32 imageIndex) const
     if (imageIndex >= m_impl->m_images.size()) [[unlikely]]
         throw ArgumentOutOfRangeException("imageIndex", std::make_pair(0uz, m_impl->m_images.size()), static_cast<size_t>(imageIndex), "The frame buffer does not contain an image at index {0}.", imageIndex);
 
-    return m_impl->m_renderTargetHandles.at(m_impl->m_images[imageIndex]);
+    return m_impl->m_renderTargetHandles.at(m_impl->m_images[imageIndex]); // NOLINT(cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
 }
 
 VkImageView VulkanFrameBuffer::imageView(StringView imageName) const
@@ -236,6 +233,7 @@ size_t VulkanFrameBuffer::getHeight() const noexcept
 
 void VulkanFrameBuffer::mapRenderTarget(const RenderTarget& renderTarget, UInt32 index)
 {
+    // NOLINTBEGIN(cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
     if (index >= m_impl->m_images.size()) [[unlikely]]
         throw ArgumentOutOfRangeException("index", std::make_pair(0uz, m_impl->m_images.size()), static_cast<size_t>(index), "The frame buffer does not contain an image at index {0}.", index);
 
@@ -243,6 +241,7 @@ void VulkanFrameBuffer::mapRenderTarget(const RenderTarget& renderTarget, UInt32
         LITEFX_WARNING(VULKAN_LOG, "The render target format {0} does not match the image format {1} for image {2}.", renderTarget.format(), m_impl->m_images[index]->format(), index);
 
     m_impl->m_mappedRenderTargets[renderTarget.identifier()] = m_impl->m_images[index];
+    // NOLINTEND(cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
 }
 
 void VulkanFrameBuffer::mapRenderTarget(const RenderTarget& renderTarget, StringView name)
@@ -270,7 +269,7 @@ const IVulkanImage& VulkanFrameBuffer::image(UInt32 index) const
     if (index >= m_impl->m_images.size())
         throw ArgumentOutOfRangeException("index", std::make_pair(0uz, m_impl->m_images.size()), static_cast<size_t>(index), "The frame buffer does not contain an image at index {0}.", index);
 
-    return *m_impl->m_images[index];
+    return *m_impl->m_images[index]; // NOLINT(cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
 }
 
 const IVulkanImage& VulkanFrameBuffer::image(const RenderTarget& renderTarget) const
@@ -311,10 +310,7 @@ void VulkanFrameBuffer::addImage(const String& name, Format format, MultiSamplin
     auto& queue = device->defaultQueue(QueueType::Graphics);
     auto commandBuffer = queue.createCommandBuffer(true);
     auto barrier = commandBuffer->makeBarrier(PipelineStage::None, PipelineStage::None);
-    if (::hasDepth(format) || ::hasStencil(format))
-        barrier->transition(*newImage, ResourceAccess::None, ResourceAccess::None, ImageLayout::DepthRead);
-    else
-        barrier->transition(*newImage, ResourceAccess::None, ResourceAccess::None, ImageLayout::ShaderResource);
+    barrier->transition(*newImage, ResourceAccess::None, ResourceAccess::None, ImageLayout::Common);
     commandBuffer->barrier(*barrier);
     auto fence = queue.submit(commandBuffer);
 
@@ -349,10 +345,7 @@ void VulkanFrameBuffer::addImage(const String& name, const RenderTarget& renderT
     auto& queue = device->defaultQueue(QueueType::Graphics);
     auto commandBuffer = queue.createCommandBuffer(true);
     auto barrier = commandBuffer->makeBarrier(PipelineStage::None, PipelineStage::None);
-    if (::hasDepth(format) || ::hasStencil(format))
-        barrier->transition(*newImage, ResourceAccess::None, ResourceAccess::None, ImageLayout::DepthRead);
-    else
-        barrier->transition(*newImage, ResourceAccess::None, ResourceAccess::None, ImageLayout::ShaderResource);
+    barrier->transition(*newImage, ResourceAccess::None, ResourceAccess::None, ImageLayout::Common);
     commandBuffer->barrier(*barrier);
     auto fence = queue.submit(commandBuffer);
 

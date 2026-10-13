@@ -357,3 +357,6 @@ out/
 
 # CMake user presets
 CMakeUserPresets.json
+
+# Doxygen XML output
+docs/xml/*

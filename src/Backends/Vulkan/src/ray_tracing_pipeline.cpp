@@ -136,7 +136,7 @@ public:
 		raiseIfFailed(::vkCreateRayTracingPipelines(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline), "Unable to create render pipeline.");
 
 #ifndef NDEBUG
-		m_device->setDebugName(pipeline, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT, parent.name());
+		m_device->setDebugName(pipeline, VK_OBJECT_TYPE_PIPELINE, parent.name());
 #endif
 
 		return pipeline;
@@ -279,7 +279,7 @@ VulkanRayTracingPipeline::VulkanRayTracingPipeline(const VulkanDevice& device, c
 	this->handle() = m_impl->initialize(*this);
 }
 
-VulkanRayTracingPipeline::VulkanRayTracingPipeline(const VulkanDevice& device, ShaderRecordCollection&& shaderRecords) noexcept :
+VulkanRayTracingPipeline::VulkanRayTracingPipeline(const VulkanDevice& device, ShaderRecordCollection&& shaderRecords) noexcept : // NOLINT(bugprone-exception-escape)
 	VulkanPipelineState(VK_NULL_HANDLE), m_impl(device, std::move(shaderRecords))
 {
 }

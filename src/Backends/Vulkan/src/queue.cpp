@@ -100,7 +100,7 @@ VulkanQueue::VulkanQueue(const VulkanDevice& device, QueueType type, QueuePriori
 	this->handle() = m_impl->initialize(device);
 }
 
-VulkanQueue::~VulkanQueue() noexcept
+VulkanQueue::~VulkanQueue() noexcept // NOLINT(bugprone-exception-escape)
 {
 	m_impl->release();
 }
@@ -139,23 +139,26 @@ void VulkanQueue::beginDebugRegion(const String& label, const Vectors::ByteVecto
 		.color = { static_cast<float>(color.x()) / static_cast<float>(std::numeric_limits<UInt8>::max()), static_cast<float>(color.y()) / static_cast<float>(std::numeric_limits<UInt8>::max()), static_cast<float>(color.z()) / static_cast<float>(std::numeric_limits<UInt8>::max()), 1.0f }
 	};
 	
-	::vkQueueBeginDebugUtilsLabel(this->handle(), &labelInfo);
+	if (::vkQueueBeginDebugUtilsLabel)
+		::vkQueueBeginDebugUtilsLabel(this->handle(), &labelInfo);
 }
 
 void VulkanQueue::endDebugRegion() const noexcept
 {
-	::vkQueueEndDebugUtilsLabel(this->handle());
+	if (::vkQueueEndDebugUtilsLabel)
+		::vkQueueEndDebugUtilsLabel(this->handle());
 }
 
 void VulkanQueue::setDebugMarker(const String& label, const Vectors::ByteVector3& color) const noexcept
 {
-	VkDebugUtilsLabelEXT labelInfo{
+	VkDebugUtilsLabelEXT labelInfo {
 		.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT,
 		.pLabelName = label.c_str(),
 		.color = { static_cast<float>(color.x()) / static_cast<float>(std::numeric_limits<UInt8>::max()), static_cast<float>(color.y()) / static_cast<float>(std::numeric_limits<UInt8>::max()), static_cast<float>(color.z()) / static_cast<float>(std::numeric_limits<UInt8>::max()), 1.0f }
 	};
 
-	::vkQueueInsertDebugUtilsLabel(this->handle(), &labelInfo);
+	if (::vkQueueInsertDebugUtilsLabel)
+		::vkQueueInsertDebugUtilsLabel(this->handle(), &labelInfo);
 }
 #endif // LITEFX_BUILD_SUPPORT_DEBUG_MARKERS
 
@@ -202,7 +205,7 @@ UInt64 VulkanQueue::submit(const SharedPtr<const VulkanCommandBuffer>& commandBu
 		.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
 		.semaphore = m_impl->m_timelineSemaphore,
 		.value = fence,
-		.stageMask = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT
+		.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT
 	};
 
 	VkCommandBufferSubmitInfo commandBufferInfo = {
@@ -301,8 +304,7 @@ void VulkanQueue::waitFor(UInt64 fence) const
 		throw RuntimeException("Cannot wait for fence on a released device instance.");
 
 	UInt64 completedValue{ 0 };
-	//raiseIfFailed(::vkGetSemaphoreCounterValue(device->handle(), m_impl->m_timelineSemaphore, &completedValue), "Unable to query current queue timeline semaphore value.");
-	::vkGetSemaphoreCounterValue(device->handle(), m_impl->m_timelineSemaphore, &completedValue);
+	raiseIfFailed(::vkGetSemaphoreCounterValue(device->handle(), m_impl->m_timelineSemaphore, &completedValue), "Unable to query current queue timeline semaphore value.");
 
 	if (completedValue < fence)
 	{
@@ -313,8 +315,7 @@ void VulkanQueue::waitFor(UInt64 fence) const
 			.pValues = &fence
 		};
 
-		//raiseIfFailed(::vkWaitSemaphores(device->handle(), &waitInfo, std::numeric_limits<UInt64>::max()), "Unable to wait for queue timeline semaphore.");
-		::vkWaitSemaphores(device->handle(), &waitInfo, std::numeric_limits<UInt64>::max());
+		raiseIfFailed(::vkWaitSemaphores(device->handle(), &waitInfo, std::numeric_limits<UInt64>::max()), "Unable to wait for queue timeline semaphore.");
 	}
 
 	m_impl->releaseCommandBuffers(*this, fence);
@@ -326,7 +327,7 @@ void VulkanQueue::waitFor(const VulkanQueue& queue, UInt64 fence) const noexcept
 		.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
 		.semaphore = queue.m_impl->m_timelineSemaphore,
 		.value = fence,
-		.stageMask = VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT
+		.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT
 	};
 
 	VkSubmitInfo2 submitInfo {
